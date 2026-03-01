@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Puerto Aventuras Super-App - Prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ocean-blue: #0066CC;
+            --sand-white: #FAF8F5;
+            --sunset-orange: #FF6B35;
+            --palm-green: #22C55E;
+            --deep-navy: #0A1628;
+            --coral-red: #EF4444;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-600: #4B5563;
+            --gray-800: #1F2937;
+            --gold: #FFD700;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-100);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: var(--sand-white);
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--sand-white);
+            padding-bottom: 80px;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            background: var(--deep-navy);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--deep-navy);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--ocean-blue);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            height: 100%;
+            background: linear-gradient(135deg, var(--ocean-blue) 0%, var(--deep-navy) 100%);
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .login-screen h1 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .login-screen p {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.25);
+        }
+
+        .form-input.light {
+            background: var(--gray-100);
+            color: var(--deep-navy);
+        }
+
+        .form-input.light::placeholder {
+            color: var(--gray-600);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--ocean-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0052A3;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--ocean-blue);
+            border: 2px solid var(--ocean-blue);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        /* Dashboard */
+        .hero-card {
+            background: linear-gradient(135deg, var(--ocean-blue) 0%, #004080 100%);
+            color: white;
+            padding: 24px;
+            margin: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,102,204,0.3);
+        }
+
+        .hero-card h2 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .hero-card .weather {
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .balance-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .balance-item {
+            flex: 1;
+        }
+
+        .balance-item .label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .balance-item .value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--deep-navy);
+            padding: 0 20px;
+            margin-bottom: 12px;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--gray-600);
+            padding: 0 20px;
+            margin-bottom: 16px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 0 20px;
+            margin-bottom: 24px;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 8px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            border-color: var(--ocean-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .action-btn .icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .action-btn .label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 20px 16px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .card-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: var(--deep-navy);
+            margin-bottom: 4px;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-bottom: 12px;
+        }
+
+        .card-action {
+            color: var(--ocean-blue);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Yacht Rentals */
+        .yacht-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 20px 20px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .yacht-card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .yacht-image {
+            height: 160px;
+            background: linear-gradient(135deg, #0066CC, #004080);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            position: relative;
+        }
+
+        .yacht-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--gold);
+            color: var(--deep-navy);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .yacht-info {
+            padding: 16px;
+        }
+
+        .yacht-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--deep-navy);
+            margin-bottom: 4px;
+        }
+
+        .yacht-specs {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 12px;
+        }
+
+        .yacht-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ocean-blue);
+        }
+
+        .yacht-price-period {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .yacht-features {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .yacht-feature {
+            background: var(--gray-100);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+
+        /* Real Estate */
+        .property-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 20px 20px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .property-card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .property-image {
+            height: 180px;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            position: relative;
+        }
+
+        .property-type {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: white;
+            color: var(--deep-navy);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .property-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--palm-green);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .property-info {
+            padding: 16px;
+        }
+
+        .property-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--deep-navy);
+            margin-bottom: 4px;
+        }
+
+        .property-location {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-bottom: 12px;
+        }
+
+        .property-specs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .property-spec {
+            text-align: center;
+            padding: 8px;
+            background: var(--gray-100);
+            border-radius: 8px;
+        }
+
+        .property-spec-value {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--deep-navy);
+        }
+
+        .property-spec-label {
+            font-size: 11px;
+            color: var(--gray-600);
+        }
+
+        .property-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ocean-blue);
+        }
+
+        /* Restaurant Promotions */
+        .promo-card {
+            background: linear-gradient(135deg, var(--sunset-orange), #F7931E);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 20px 16px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .promo-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+        }
+
+        .promo-badge {
+            background: white;
+            color: var(--sunset-orange);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .promo-restaurant {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .promo-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .promo-details {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .promo-cta {
+            background: white;
+            color: var(--sunset-orange);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            text-align: center;
+            display: block;
+            text-decoration: none;
+        }
+
+        /* Security */
+        .security-status {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 20px 16px;
+            border: 2px solid var(--palm-green);
+        }
+
+        .security-status.alert {
+            border-color: var(--sunset-orange);
+        }
+
+        .security-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .security-icon {
+            font-size: 48px;
+        }
+
+        .security-status-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--deep-navy);
+        }
+
+        .security-status-subtitle {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .security-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .security-btn {
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .security-btn.primary {
+            background: var(--ocean-blue);
+            color: white;
+        }
+
+        .security-btn.secondary {
+            background: var(--gray-100);
+            color: var(--deep-navy);
+        }
+
+        .security-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px;
+            padding: 0 20px;
+        }
+
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid var(--gray-200);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ocean-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-600);
+            margin-top: 4px;
+        }
+
+        /* Restaurant List */
+        .restaurant-card {
+            background: white;
+            border-radius: 12px;
+            margin: 0 20px 16px;
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .restaurant-card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .restaurant-image {
+            height: 120px;
+            background: linear-gradient(135deg, var(--ocean-blue), var(--deep-navy));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .restaurant-info {
+            padding: 16px;
+        }
+
+        .restaurant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .restaurant-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--deep-navy);
+        }
+
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .restaurant-cuisine {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .restaurant-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        /* Tag */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tag-success {
+            background: var(--palm-green);
+            color: white;
+        }
+
+        .tag-warning {
+            background: var(--sunset-orange);
+            color: white;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 375px;
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--gray-600);
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--ocean-blue);
+        }
+
+        .nav-item .icon {
+            font-size: 24px;
+        }
+
+        .nav-item .label {
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* Wallet */
+        .wallet-balance {
+            background: linear-gradient(135deg, var(--ocean-blue) 0%, #004080 100%);
+            color: white;
+            padding: 32px 24px;
+            margin: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .wallet-balance .amount {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 16px 0;
+        }
+
+        /* Transaction List */
+        .transaction-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 20px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: var(--gray-100);
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--deep-navy);
+        }
+
+        .transaction-time {
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        .transaction-amount {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .transaction-amount.negative {
+            color: var(--coral-red);
+        }
+
+        .transaction-amount.positive {
+            color: var(--palm-green);
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 16px;
+            overflow-x: auto;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .filter-tab.active {
+            background: var(--ocean-blue);
+            color: white;
+        }
+
+        .filter-tab:not(.active) {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* Help Text */
+        .help-text {
+            text-align: center;
+            font-size: 12px;
+            color: var(--gray-600);
+            padding: 16px 20px;
+        }
+
+        /* My Day - Timeline */
+        .day-header {
+            background: linear-gradient(135deg, var(--ocean-blue) 0%, #004080 100%);
+            color: white;
+            padding: 24px 20px;
+            margin: 0 0 20px;
+        }
+
+        .day-date {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .day-greeting {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .day-weather {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 59px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--gray-200);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-time {
+            min-width: 50px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-600);
+            padding-top: 4px;
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--ocean-blue);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--ocean-blue);
+            margin-top: 6px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-dot.completed {
+            background: var(--palm-green);
+            box-shadow: 0 0 0 2px var(--palm-green);
+        }
+
+        .timeline-dot.upcoming {
+            background: var(--gray-300);
+            box-shadow: 0 0 0 2px var(--gray-300);
+        }
+
+        .timeline-card {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeline-card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .timeline-card.completed {
+            opacity: 0.6;
+        }
+
+        .timeline-card .activity-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .timeline-card .activity-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--deep-navy);
+            margin-bottom: 4px;
+        }
+
+        .timeline-card .activity-details {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .timeline-card .activity-location {
+            font-size: 12px;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .timeline-card .activity-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .activity-status.now {
+            background: var(--sunset-orange);
+            color: white;
+        }
+
+        .activity-status.upcoming {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .activity-status.completed {
+            background: var(--palm-green);
+            color: white;
+        }
+
+        /* Recommendations */
+        .recommendations {
+            padding: 0 20px;
+            margin-top: 24px;
+        }
+
+        .rec-card {
+            background: linear-gradient(135deg, #FFB800, #FF8C00);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rec-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+        }
+
+        .rec-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .rec-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .rec-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .rec-action {
+            background: white;
+            color: #FF8C00;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        /* Day Summary */
+        .day-summary {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 20px 20px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 12px;
+            background: var(--gray-100);
+            border-radius: 8px;
+        }
+
+        .summary-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ocean-blue);
+        }
+
+        .summary-stat-label {
+            font-size: 11px;
+            color: var(--gray-600);
+            margin-top: 4px;
+        }
+
+        /* Map Preview */
+        .map-preview {
+            background: linear-gradient(135deg, #E8F4FD, #D1E9FC);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 20px 20px;
+            text-align: center;
+        }
+
+        .map-preview-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .map-preview-title {
+            font-weight: 600;
+            color: var(--deep-navy);
+            margin-bottom: 8px;
+        }
+
+        .map-preview-desc {
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>📶 5G</span>
+        </div>
+
+        <!-- Login Screen -->
+        <div class="screen active" id="login-screen">
+            <div class="login-screen">
+                <div class="logo">🏝️</div>
+                <h1>Puerto Aventuras</h1>
+                <p>Your Community App</p>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-input" placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-input" placeholder="••••••••">
+                </div>
+
+                <button class="btn btn-primary" onclick="showScreen('dashboard')">Sign In</button>
+                <p class="help-text" style="color: rgba(255,255,255,0.8); margin-top: 20px;">
+                    Forgot password? First time? Register
+                </p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="screen" id="dashboard">
+            <div class="header">
+                <span>☰</span>
+                <h1>Home</h1>
+                <span>🔔 5 👤</span>
+            </div>
+
+            <div class="hero-card">
+                <h2>Good morning, Sarah!</h2>
+                <p class="weather">☀️ 78°F | Partly cloudy</p>
+                <div class="balance-row">
+                    <div class="balance-item">
+                        <div class="label">Balance</div>
+                        <div class="value">💰 $2,450</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="label">Points</div>
+                        <div class="value">⭐ 1,250</div>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Today's Plan</div>
+                    <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="showScreen('my-day')">
+                        <div style="font-size: 24px;">📅</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">3 activities planned</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Yacht charter • Lunch • Golf</div>
+                        </div>
+                        <div style="font-size: 18px;">→</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Explore & Book</div>
+            <div class="quick-actions">
+                <div class="action-btn" onclick="showScreen('yacht-rentals')">
+                    <span class="icon">🛥️</span>
+                    <span class="label">Yacht<br>Rentals</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('real-estate')">
+                    <span class="icon">🏡</span>
+                    <span class="label">Real<br>Estate</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('promotions')">
+                    <span class="icon">🎉</span>
+                    <span class="label">Deals &<br>Promos</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('security')">
+                    <span class="icon">🔒</span>
+                    <span class="label">Security<br>& Safety</span>
+                </div>
+            </div>
+
+            <div class="section-title">Quick Services</div>
+            <div class="quick-actions" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="action-btn" onclick="showScreen('guest-access')">
+                    <span class="icon">🏠</span>
+                    <span class="label">Guest<br>Access</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('marina')">
+                    <span class="icon">⚓</span>
+                    <span class="label">My<br>Slip</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('golf')">
+                    <span class="icon">⛳</span>
+                    <span class="label">Golf<br>Book</span>
+                </div>
+                <div class="action-btn" onclick="showScreen('marketplace')">
+                    <span class="icon">🍕</span>
+                    <span class="label">Order<br>Food</span>
+                </div>
+            </div>
+
+            <div class="section-title">Your Bookings</div>
+            <div class="card">
+                <span class="card-icon">🛥️</span>
+                <div class="card-title">Yacht Charter - Tomorrow</div>
+                <div class="card-subtitle">46ft Azimut • 8:00 AM</div>
+                <span class="card-action">View Details →</span>
+            </div>
+
+            <div class="section-title" style="margin-top: 24px;">Your Day at a Glance</div>
+            <div class="card" onclick="showScreen('my-day')">
+                <span class="card-icon">📅</span>
+                <div class="card-title">My Day - March 8, 2026</div>
+                <div class="card-subtitle">3 activities planned • Start: 9:00 AM</div>
+                <span class="card-action">View Full Schedule →</span>
+            </div>
+        </div>
+
+        <!-- My Day -->
+        <div class="screen" id="my-day">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>My Day</h1>
+                <span>📅</span>
+            </div>
+
+            <div class="day-header">
+                <div class="day-date">Saturday, March 8, 2026</div>
+                <div class="day-greeting">Your Perfect Day Awaits!</div>
+                <div class="day-weather">☀️ 82°F • Sunny with light breeze • Perfect for boating!</div>
+            </div>
+
+            <div class="day-summary" style="margin: 0 20px 20px;">
+                <div style="font-weight: 600; color: var(--deep-navy);">Today's Overview</div>
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">3</div>
+                        <div class="summary-stat-label">Activities</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">$420</div>
+                        <div class="summary-stat-label">Budget</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value">5.2</div>
+                        <div class="summary-stat-label">Hours</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Your Schedule</div>
+
+            <div class="timeline">
+                <!-- Completed Activity -->
+                <div class="timeline-item">
+                    <div class="timeline-time">9:00</div>
+                    <div class="timeline-dot completed"></div>
+                    <div class="timeline-card completed">
+                        <div class="activity-icon">☕</div>
+                        <div class="activity-title">Breakfast at Porto Bello</div>
+                        <div class="activity-details">Coffee & croissant with ocean view</div>
+                        <div class="activity-location">📍 Marina • $12</div>
+                        <div class="activity-status completed">✓ Completed</div>
+                    </div>
+                </div>
+
+                <!-- Current Activity -->
+                <div class="timeline-item">
+                    <div class="timeline-time">10:30</div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-card">
+                        <div class="activity-icon">🛥️</div>
+                        <div class="activity-title">Yacht Charter - NOW</div>
+                        <div class="activity-details">46ft Azimut • Snorkeling at Inha Reef</div>
+                        <div class="activity-location">📍 Marina Departure • $350</div>
+                        <div class="activity-status now">🔴 Happening Now</div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Activity -->
+                <div class="timeline-item">
+                    <div class="timeline-time">2:00</div>
+                    <div class="timeline-dot upcoming"></div>
+                    <div class="timeline-card" onclick="showScreen('marketplace')">
+                        <div class="activity-icon">🍕</div>
+                        <div class="activity-title">Lunch at Mario's Pizza</div>
+                        <div class="activity-details">Wood-fired pizza • 50% OFF with PUERTO50</div>
+                        <div class="activity-location">📍 Marina Plaza • $28</div>
+                        <div class="activity-status upcoming">⏰ In 3.5 hours</div>
+                    </div>
+                </div>
+
+                <!-- Evening Activity -->
+                <div class="timeline-item">
+                    <div class="timeline-time">6:00</div>
+                    <div class="timeline-dot upcoming"></div>
+                    <div class="timeline-card" onclick="showScreen('golf')">
+                        <div class="activity-icon">⛳</div>
+                        <div class="activity-title">Sunset Golf Session</div>
+                        <div class="activity-details">Twilight rate • 9 holes with cart</div>
+                        <div class="activity-location">📍 Golf Course • $79</div>
+                        <div class="activity-status upcoming">⏰ In 7.5 hours</div>
+                    </div>
+                </div>
+
+                <!-- Evening Relaxation -->
+                <div class="timeline-item">
+                    <div class="timeline-time">8:30</div>
+                    <div class="timeline-dot upcoming"></div>
+                    <div class="timeline-card">
+                        <div class="activity-icon">🌅</div>
+                        <div class="activity-title">Dinner & Sunset</div>
+                        <div class="activity-details">Evening relaxation at beach club</div>
+                        <div class="activity-location">📍 Beach Club</div>
+                        <div class="activity-status upcoming">⏰ In 10 hours</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recommendations">
+                <div class="rec-card">
+                    <div class="rec-label">✨ BASED ON YOUR DAY</div>
+                    <div class="rec-title">Free Time After Golf?</div>
+                    <div class="rec-desc">The spa has openings at 7:30 PM. Perfect way to end your active day!</div>
+                    <div class="rec-action">Book Spa →</div>
+                </div>
+            </div>
+
+            <div class="map-preview" onclick="showScreen('dashboard')">
+                <div class="map-preview-icon">🗺️</div>
+                <div class="map-preview-title">View Day Map</div>
+                <div class="map-preview-desc">See all your locations on the interactive map</div>
+            </div>
+
+            <div class="section-title">Quick Add</div>
+            <div style="padding: 0 20px 20px;">
+                <div class="card" onclick="showScreen('yacht-rentals')">
+                    <span class="card-icon">🛥️</span>
+                    <div class="card-title">Book Another Yacht</div>
+                    <div class="card-subtitle">For tomorrow or next week</div>
+                    <span class="card-action">Browse →</span>
+                </div>
+                <div class="card" onclick="showScreen('marketplace')">
+                    <span class="card-icon">🍽️</span>
+                    <div class="card-title">Reserve Dinner</div>
+                    <div class="card-subtitle">Evening dining reservations</div>
+                    <span class="card-action">Find Table →</span>
+                </div>
+            </div>
+
+            <div class="help-text">💡 Tips arrive 15 min early • Your wallet has $2,450 • Earn 2X points this weekend!</div>
+        </div>
+
+        <!-- Yacht Rentals -->
+
+        <!-- Yacht Rentals -->
+        <div class="screen" id="yacht-rentals">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Yacht Rentals</h1>
+                <span></span>
+            </div>
+
+            <div class="section-subtitle">Rent yachts by the hour, day, or week</div>
+
+            <div style="padding: 0 20px 16px;">
+                <input type="text" class="form-input light" placeholder="🔍 Search yachts..." style="margin-bottom: 12px;">
+            </div>
+
+            <div class="filter-tabs">
+                <div class="filter-tab active">All</div>
+                <div class="filter-tab">Sport Fishers</div>
+                <div class="filter-tab">Catamarans</div>
+                <div class="filter-tab">Sailboats</div>
+            </div>
+
+            <div class="yacht-card" onclick="showScreen('wallet')">
+                <div class="yacht-image">
+                    🛥️
+                    <span class="yacht-badge">Premium</span>
+                </div>
+                <div class="yacht-info">
+                    <div class="yacht-name">46ft Azimut Flybridge</div>
+                    <div class="yacht-specs">46ft • 12 passengers • 4 cabins</div>
+                    <div class="yacht-features">
+                        <span class="yacht-feature">Captain</span>
+                        <span class="yacht-feature">Snorkel Gear</span>
+                        <span class="yacht-feature">Drinks</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                        <div>
+                            <div class="yacht-price">$350</div>
+                            <div class="yacht-price-period">/ 4 hours</div>
+                        </div>
+                        <span class="card-action">Book →</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="yacht-card" onclick="showScreen('wallet')">
+                <div class="yacht-image" style="background: linear-gradient(135deg, #FF6B35, #F7931E);">
+                    🚤
+                </div>
+                <div class="yacht-info">
+                    <div class="yacht-name">38ft Speedboat</div>
+                    <div class="yacht-specs">38ft • 8 passengers • No license needed</div>
+                    <div class="yacht-features">
+                        <span class="yacht-feature">Water Skis</span>
+                        <span class="yacht-feature">Wakeboard</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                        <div>
+                            <div class="yacht-price">$150</div>
+                            <div class="yacht-price-period">/ 2 hours</div>
+                        </div>
+                        <span class="card-action">Book →</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="yacht-card" onclick="showScreen('wallet')">
+                <div class="yacht-image" style="background: linear-gradient(135deg, #22C55E, #16A34A);">
+                    ⛵
+                </div>
+                <div class="yacht-info">
+                    <div class="yacht-name">52ft Catamaran</div>
+                    <div class="yacht-specs">52ft • 20 passengers • 6 cabins</div>
+                    <div class="yacht-features">
+                        <span class="yacht-feature">Full Day</span>
+                        <span class="yacht-feature">Lunch Included</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                        <div>
+                            <div class="yacht-price">$1,200</div>
+                            <div class="yacht-price-period">/ full day</div>
+                        </div>
+                        <span class="card-action">Book →</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-text">💡 Includes captain, fuel, and insurance. Pay with your PA wallet!</div>
+        </div>
+
+        <!-- Real Estate -->
+        <div class="screen" id="real-estate">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Real Estate</h1>
+                <span></span>
+            </div>
+
+            <div class="section-subtitle">Buy, rent, or sell properties in Puerto Aventuras</div>
+
+            <div class="filter-tabs">
+                <div class="filter-tab active">For Sale</div>
+                <div class="filter-tab">For Rent</div>
+                <div class="filter-tab">New Listings</div>
+            </div>
+
+            <div class="property-card" onclick="showScreen('wallet')">
+                <div class="property-image">
+                    🏡
+                    <span class="property-type">Villa</span>
+                    <span class="property-status">For Sale</span>
+                </div>
+                <div class="property-info">
+                    <div class="property-title">Oceanfront Villa - Phase 4</div>
+                    <div class="property-location">Beachfront • 5BR/5BA • Pool</div>
+                    <div class="property-specs">
+                        <div class="property-spec">
+                            <div class="property-spec-value">5</div>
+                            <div class="property-spec-label">Bed</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">6,500</div>
+                            <div class="property-spec-label">SqFt</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">3</div>
+                            <div class="property-spec-label">Pool</div>
+                        </div>
+                    </div>
+                    <div class="property-price">$1,850,000</div>
+                    <div style="margin-top: 8px; color: var(--gray-600); font-size: 13px;">$2,500/mo HOA</div>
+                </div>
+            </div>
+
+            <div class="property-card" onclick="showScreen('wallet')">
+                <div class="property-image" style="background: linear-gradient(135deg, #0066CC, #004080);">
+                    🏢
+                    <span class="property-type">Condo</span>
+                    <span class="property-status">For Rent</span>
+                </div>
+                <div class="property-info">
+                    <div class="property-title">Marina View Condo</div>
+                    <div class="property-location">Marina • 2BR/2BA • furnished</div>
+                    <div class="property-specs">
+                        <div class="property-spec">
+                            <div class="property-spec-value">2</div>
+                            <div class="property-spec-label">Bed</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">1,800</div>
+                            <div class="property-spec-label">SqFt</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">View</div>
+                            <div class="property-spec-label">Marina</div>
+                        </div>
+                    </div>
+                    <div class="property-price">$3,500/mo</div>
+                    <div style="margin-top: 8px; color: var(--gray-600); font-size: 13px;">Available March 15</div>
+                </div>
+            </div>
+
+            <div class="property-card" onclick="showScreen('wallet')">
+                <div class="property-image" style="background: linear-gradient(135deg, #FFD700, #FFA500);">
+                    🏠
+                    <span class="property-type">Villa</span>
+                    <span class="property-status">New Listing</span>
+                </div>
+                <div class="property-info">
+                    <div class="property-title">Golf Course Villa</div>
+                    <div class="property-location">Golf Course • 4BR/4BA • Pool + Garden</div>
+                    <div class="property-specs">
+                        <div class="property-spec">
+                            <div class="property-spec-value">4</div>
+                            <div class="property-spec-label">Bed</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">4,200</div>
+                            <div class="property-spec-label">SqFt</div>
+                        </div>
+                        <div class="property-spec">
+                            <div class="property-spec-value">Golf</div>
+                            <div class="property-spec-label">Front</div>
+                        </div>
+                    </div>
+                    <div class="property-price">$1,650,000</div>
+                    <div style="margin-top: 8px; color: var(--palm-green); font-weight: 600; font-size: 13px;">⭐ Just Listed!</div>
+                </div>
+            </div>
+
+            <div class="help-text">💡 Contact our real estate partners directly through the app</div>
+        </div>
+
+        <!-- Promotions -->
+        <div class="screen" id="promotions">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Deals & Promos</h1>
+                <span></span>
+            </div>
+
+            <div class="section-subtitle">Exclusive offers for Puerto Aventuras residents</div>
+
+            <div class="promo-card" onclick="showScreen('marketplace')">
+                <span class="promo-badge">🔥 LIMITED TIME</span>
+                <div class="promo-restaurant">Mario's Pizza</div>
+                <div class="promo-title">50% OFF Your First Order!</div>
+                <div class="promo-details">Use code: PUERTO50 at checkout. Valid for new users only.</div>
+                <div class="promo-cta">Claim Offer</div>
+            </div>
+
+            <div class="promo-card" style="background: linear-gradient(135deg, #22C55E, #16A34A);">
+                <span class="promo-badge">⛳ GOLF SPECIAL</span>
+                <div class="promo-restaurant">Golf Course</div>
+                <div class="promo-title">Twilight Rate - $79!</div>
+                <div class="promo-details">Play after 3 PM for just $79/person. Includes cart rental.</div>
+                <div class="promo-cta">Book Tee Time</div>
+            </div>
+
+            <div class="promo-card" style="background: linear-gradient(135deg, #0066CC, #004080);">
+                <span class="promo-badge">🛥️ MARINA</span>
+                <div class="promo-restaurant">Marina Slips</div>
+                <div class="promo-title">Book 3 Days, Get 1 FREE!</div>
+                <div class="promo-details">Stay 3 nights, get 4th night free. Valid through end of month.</div>
+                <div class="promo-cta">Book Now</div>
+            </div>
+
+            <div class="promo-card" style="background: linear-gradient(135deg, #FFD700, #FFA500);">
+                <span class="promo-badge" style="color: #FFD700; background: var(--deep-navy);">⭐ REWARDS</span>
+                <div class="promo-restaurant">Loyalty Bonus</div>
+                <div class="promo-title">2X Points This Weekend!</div>
+                <div class="promo-details">Earn double loyalty points on all marketplace orders Sat-Sun.</div>
+                <div class="promo-cta">Shop Now</div>
+            </div>
+
+            <div class="section-title" style="margin-top: 32px;">Restaurant Promos</div>
+
+            <div class="restaurant-card" onclick="showScreen('marketplace')">
+                <div class="restaurant-image">🍕</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Mario's Pizza</span>
+                        <span class="restaurant-rating">⭐ 4.5</span>
+                    </div>
+                    <div class="restaurant-cuisine">Italian | Pizza | Pasta</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Marina</span>
+                        <span>⏰ Open until 10 PM</span>
+                    </div>
+                    <div style="background: var(--sunset-orange); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                        🔥 50% OFF first order
+                    </div>
+                </div>
+            </div>
+
+            <div class="restaurant-card" onclick="showScreen('marketplace')">
+                <div class="restaurant-image" style="background: linear-gradient(135deg, #22C55E, #16A34A);">🌮</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Taco Libre</span>
+                        <span class="restaurant-rating">⭐ 4.7</span>
+                    </div>
+                    <div class="restaurant-cuisine">Mexican | Tacos | Street Food</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Center</span>
+                        <span>⏰ Open until 11 PM</span>
+                    </div>
+                    <div style="background: var(--palm-green); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                        ⭐ Free chips with every order
+                    </div>
+                </div>
+            </div>
+
+            <div class="restaurant-card" onclick="showScreen('marketplace')">
+                <div class="restaurant-image" style="background: linear-gradient(135deg, #FF6B35, #F7931E);">🍣</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Sushi Express</span>
+                        <span class="restaurant-rating">⭐ 4.2</span>
+                    </div>
+                    <div class="restaurant-cuisine">Japanese | Sushi | Ramen</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Plaza</span>
+                        <span>⏰ Open until 9:30 PM</span>
+                    </div>
+                    <div style="background: var(--ocean-blue); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                        🍣 Buy 2 rolls, get 1 free
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security -->
+        <div class="screen" id="security">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Security & Safety</h1>
+                <span></span>
+            </div>
+
+            <div class="security-stats">
+                <div class="stat-box">
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-label">Security</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">156</div>
+                    <div class="stat-label">Entries Today</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Incidents</div>
+                </div>
+            </div>
+
+            <div class="section-title">Your Security Status</div>
+
+            <div class="security-status">
+                <div class="security-header">
+                    <div>
+                        <div class="security-icon">🏠</div>
+                        <div class="security-status-title">Villa #45</div>
+                        <div class="security-status-subtitle">All systems secure</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 32px;">✓</div>
+                        <div style="font-size: 12px; color: var(--palm-green); font-weight: 600;">Secure</div>
+                    </div>
+                </div>
+                <div class="security-actions">
+                    <button class="security-btn primary" onclick="showScreen('guest-access')">Add Guest</button>
+                    <button class="security-btn secondary" onclick="showScreen('qr-display')">View QR Pass</button>
+                </div>
+            </div>
+
+            <div class="section-title">Quick Actions</div>
+
+            <div style="padding: 0 20px 16px;">
+                <div class="card" onclick="showScreen('guest-access')">
+                    <span class="card-icon">👥</span>
+                    <div class="card-title">Guest Access</div>
+                    <div class="card-subtitle">Create QR passes for visitors</div>
+                    <span class="card-action">Manage →</span>
+                </div>
+
+                <div class="card">
+                    <span class="card-icon">🚗</span>
+                    <div class="card-title">Vehicle Registration</div>
+                    <div class="card-subtitle">Register your vehicles for LPR access</div>
+                    <span class="card-action">Manage →</span>
+                </div>
+
+                <div class="card">
+                    <span class="card-icon">🚨</span>
+                    <div class="card-title">Emergency SOS</div>
+                    <div class="card-subtitle">One-tap emergency contact</div>
+                    <span class="card-action" style="color: var(--coral-red);">Activate →</span>
+                </div>
+            </div>
+
+            <div class="section-title">Security Cameras</div>
+
+            <div style="padding: 0 20px;">
+                <div class="card">
+                    <div class="card-title">Main Gate</div>
+                    <div class="card-subtitle">Active • 12 cameras monitored</div>
+                    <span class="card-action">View Cameras →</span>
+                </div>
+                <div class="card">
+                    <div class="card-title">Marina Area</div>
+                    <div class="card-subtitle">Active • 8 cameras monitored</div>
+                    <span class="card-action">View Cameras →</span>
+                </div>
+                <div class="card">
+                    <div class="card-title">Golf Course</div>
+                    <div class="card-subtitle">Active • 6 cameras monitored</div>
+                    <span class="card-action">View Cameras →</span>
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 24px;">Recent Activity Log</div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">✅</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Guest admitted - Jane Smith</div>
+                    <div class="transaction-time">Guest Access • 2 min ago</div>
+                </div>
+            </div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">🚗</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Vehicle recognized - CDM 1234</div>
+                    <div class="transaction-time">LPR System • 15 min ago</div>
+                </div>
+            </div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">🚨</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Safety alert resolved - Gate B</div>
+                    <div class="transaction-time">Security • 1 hour ago</div>
+                </div>
+            </div>
+
+            <div class="help-text">💡 Contact security 24/7: 📞 ext. 100 | 🚨 Emergency: ext. 911</div>
+        </div>
+
+        <!-- Guest Access -->
+        <div class="screen" id="guest-access">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Guest Access</h1>
+                <span></span>
+            </div>
+
+            <div style="padding: 20px;">
+                <div class="form-group">
+                    <input type="text" class="form-input light" placeholder="Visitor name">
+                </div>
+                <div class="form-group">
+                    <input type="tel" class="form-input light" placeholder="Phone (optional)">
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--gray-600); margin-bottom: 12px;">Visitor Type</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 100px; padding: 12px; border: 2px solid var(--ocean-blue); border-radius: 10px; background: var(--ocean-blue); color: white; text-align: center; font-weight: 600; font-size: 14px;">Guest (24h)</div>
+                        <div style="flex: 1; min-width: 100px; padding: 12px; border: 2px solid var(--gray-200); border-radius: 10px; background: white; text-align: center; font-weight: 600; font-size: 14px;">Contractor</div>
+                        <div style="flex: 1; min-width: 100px; padding: 12px; border: 2px solid var(--gray-200); border-radius: 10px; background: white; text-align: center; font-weight: 600; font-size: 14px;">Delivery</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="showScreen('qr-display')">Generate QR Pass</button>
+
+                <div class="section-title" style="margin-top: 32px;">Active Visitors (2)</div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <div class="card-title">👤 John Doe</div>
+                            <div class="card-subtitle">📱 +52 998 *** ****</div>
+                        </div>
+                        <div class="tag tag-success" style="align-self: center;">18h left</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Display -->
+        <div class="screen" id="qr-display">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('guest-access')">←</button>
+                <h1>Guest Pass</h1>
+                <span></span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
+                <div style="width: 200px; height: 200px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 64px; margin: 24px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">📱</div>
+                <div style="font-size: 12px; color: var(--gray-600); margin-bottom: 8px;">Scan at security gate</div>
+                <div style="font-weight: 600; color: var(--deep-navy); margin-bottom: 24px;">QR-GUEST-001</div>
+
+                <div style="background: white; border-radius: 12px; padding: 20px; width: 100%;">
+                    <div style="display: flex; padding: 8px 0; border-bottom: 1px solid var(--gray-200);">
+                        <span>👤 Name</span>
+                        <span style="margin-left: auto; font-weight: 600;">Jane Smith</span>
+                    </div>
+                    <div style="display: flex; padding: 8px 0; border-bottom: 1px solid var(--gray-200);">
+                        <span>📱 Phone</span>
+                        <span style="margin-left: auto; font-weight: 600;">+52 998 123 4567</span>
+                    </div>
+                    <div style="display: flex; padding: 8px 0;">
+                        <span>🏠 Property</span>
+                        <span style="margin-left: auto; font-weight: 600;">Villa #45</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="margin-bottom: 12px;">Share Pass</button>
+                <button class="btn btn-secondary">Back to Home</button>
+
+                <p class="help-text">💡 Show this QR code at the security gate. Pass will be scanned automatically.</p>
+            </div>
+        </div>
+
+        <!-- Marina (My Slip) -->
+        <div class="screen" id="marina">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>My Slip</h1>
+                <span></span>
+            </div>
+
+            <div style="padding: 20px;">
+                <div class="card">
+                    <span class="card-icon">🛥️</span>
+                    <div class="card-title">Your Boat</div>
+                    <div class="card-subtitle">46ft Azimut - Serenity</div>
+                    <span class="card-action">Manage →</span>
+                </div>
+
+                <div class="card">
+                    <span class="card-icon">⚓</span>
+                    <div class="card-title">Slip A-42</div>
+                    <div class="card-subtitle">40FT • Water, Electric, WiFi included</div>
+                    <span class="card-action">Details →</span>
+                </div>
+
+                <div class="section-title">Upcoming Reservations</div>
+
+                <div class="card">
+                    <div class="card-title">Tomorrow, 2:00 PM</div>
+                    <div class="card-subtitle">Check-in with QR code</div>
+                    <span class="card-action" onclick="showScreen('qr-display')">View QR →</span>
+                </div>
+
+                <button class="btn btn-primary" style="margin-top: 16px;">Book Additional Days</button>
+            </div>
+        </div>
+
+        <!-- Golf -->
+        <div class="screen" id="golf">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Golf</h1>
+                <span></span>
+            </div>
+
+            <div style="padding: 20px;">
+                <input type="text" class="form-input light" placeholder="📅 Date: March 8, 2026" style="margin-bottom: 16px;">
+                <select class="form-input light" style="margin-bottom: 20px;">
+                    <option>4 players</option>
+                    <option>3 players</option>
+                    <option>2 players</option>
+                    <option>1 player</option>
+                </select>
+
+                <div class="section-title">Available Tee Times</div>
+
+                <div class="card" style="margin-bottom: 12px;">
+                    <div class="card-title">7:00 AM</div>
+                    <div class="card-subtitle">2 spots available • $120/person</div>
+                    <span class="card-action">Book →</span>
+                </div>
+
+                <div class="card" style="margin-bottom: 12px;">
+                    <div class="card-title">7:10 AM</div>
+                    <div class="card-subtitle">4 spots available • $120/person</div>
+                    <span class="card-action">Book →</span>
+                </div>
+
+                <div class="card" style="margin-bottom: 12px;">
+                    <div class="card-title">7:20 AM</div>
+                    <div class="card-subtitle">1 spot available • $120/person</div>
+                    <span class="card-action">Book →</span>
+                </div>
+
+                <div class="section-title" style="margin-top: 24px;">Facilities</div>
+
+                <div class="quick-actions" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="action-btn">
+                        <span class="icon">🎾</span>
+                        <span class="label">Tennis</span>
+                    </div>
+                    <div class="action-btn">
+                        <span class="icon">🏓</span>
+                        <span class="label">Pickleball</span>
+                    </div>
+                    <div class="action-btn">
+                        <span class="icon">🏋️</span>
+                        <span class="label">Gym</span>
+                    </div>
+                    <div class="action-btn">
+                        <span class="icon">🏊</span>
+                        <span class="label">Pool</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketplace -->
+        <div class="screen" id="marketplace">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Marketplace</h1>
+                <span>🛒 3</span>
+            </div>
+
+            <div style="padding: 16px 20px;">
+                <input type="text" class="form-input light" placeholder="🔍 Search restaurants...">
+            </div>
+
+            <div class="filter-tabs">
+                <span class="tag tag-success">All</span>
+                <span class="tag" style="background: var(--gray-200);">🍕 Italian</span>
+                <span class="tag" style="background: var(--gray-200);">🌮 Mexican</span>
+                <span class="tag" style="background: var(--gray-200);">🍣 Sushi</span>
+            </div>
+
+            <div class="restaurant-card" onclick="showScreen('wallet')">
+                <div class="restaurant-image">🍕</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Mario's Pizza</span>
+                        <span class="restaurant-rating">⭐ 4.5</span>
+                    </div>
+                    <div class="restaurant-cuisine">Italian | Pizza | Pasta</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Marina</span>
+                        <span>⏰ Open until 10 PM</span>
+                        <span>💵 $5.99 delivery</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="restaurant-card" onclick="showScreen('wallet')">
+                <div class="restaurant-image" style="background: linear-gradient(135deg, #FF6B35, #F7931E);">🍣</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Sushi Express</span>
+                        <span class="restaurant-rating">⭐ 4.2</span>
+                    </div>
+                    <div class="restaurant-cuisine">Japanese | Sushi | Ramen</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Plaza</span>
+                        <span>⏰ Open until 9:30 PM</span>
+                        <span>💵 $5.99 delivery</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="restaurant-card" onclick="showScreen('wallet')">
+                <div class="restaurant-image" style="background: linear-gradient(135deg, #22C55E, #16A34A);">🌮</div>
+                <div class="restaurant-info">
+                    <div class="restaurant-header">
+                        <span class="restaurant-name">Taco Libre</span>
+                        <span class="restaurant-rating">⭐ 4.7</span>
+                    </div>
+                    <div class="restaurant-cuisine">Mexican | Tacos | Street Food</div>
+                    <div class="restaurant-meta">
+                        <span>📍 Center</span>
+                        <span>⏰ Open until 11 PM</span>
+                        <span>💵 $4.99 delivery</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet -->
+        <div class="screen" id="wallet">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('dashboard')">←</button>
+                <h1>Wallet</h1>
+                <span></span>
+            </div>
+
+            <div class="wallet-balance">
+                <div style="font-size: 14px; opacity: 0.9;">Your Balance</div>
+                <div class="amount">$2,450.00</div>
+                <div style="font-size: 14px; opacity: 0.9;">Available to spend</div>
+                <button class="btn" style="background: white; color: var(--ocean-blue); margin-top: 20px; width: auto; padding: 12px 24px;">+ Add Funds</button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #FFB800, #FF8C00); color: white; padding: 24px; margin: 0 20px 20px; border-radius: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 14px; opacity: 0.9;">Loyalty Points</div>
+                        <div style="font-size: 32px; font-weight: 700;">⭐ 1,250</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 14px; opacity: 0.9;">=</div>
+                        <div style="font-weight: 600;">$12.50 credit</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Quick Actions</div>
+            <div style="padding: 0 20px 20px; display: flex; gap: 12px;">
+                <button class="btn btn-secondary" style="flex: 1;">💸 Send Money</button>
+                <button class="btn btn-secondary" style="flex: 1;">👥 Transfer</button>
+            </div>
+
+            <div class="section-title">Recent Transactions</div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">🍕</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Mario's Pizza</div>
+                    <div class="transaction-time">Today, 2:30 PM</div>
+                </div>
+                <div class="transaction-amount negative">-$45.50</div>
+            </div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">🛥️</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Yacht Charter (4 hrs)</div>
+                    <div class="transaction-time">Tomorrow, 8:00 AM</div>
+                </div>
+                <div class="transaction-amount negative">-$350.00</div>
+            </div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">⭐</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Loyalty Bonus</div>
+                    <div class="transaction-time">Yesterday</div>
+                </div>
+                <div class="transaction-amount positive">+$5.00</div>
+            </div>
+
+            <div class="transaction-item">
+                <div class="transaction-icon">💰</div>
+                <div class="transaction-details">
+                    <div class="transaction-title">Funds Added</div>
+                    <div class="transaction-time">Mar 1, 2026</div>
+                </div>
+                <div class="transaction-amount positive">+$500.00</div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav" id="bottom-nav">
+            <div class="nav-item active" onclick="showScreen('dashboard')">
+                <span class="icon">🏠</span>
+                <span class="label">Home</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('yacht-rentals')">
+                <span class="icon">🛥️</span>
+                <span class="label">Yachts</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('promotions')">
+                <span class="icon">🎉</span>
+                <span class="label">Deals</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('wallet')">
+                <span class="icon">💰</span>
+                <span class="label">Wallet</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('security')">
+                <span class="icon">🔒</span>
+                <span class="label">Security</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            document.getElementById(screenId).classList.add('active');
+
+            const bottomNav = document.getElementById('bottom-nav');
+            if (screenId === 'login-screen' || screenId === 'qr-display') {
+                bottomNav.style.display = 'none';
+            } else {
+                bottomNav.style.display = 'flex';
+            }
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const navMap = {
+                'dashboard': 0,
+                'my-day': 0,
+                'yacht-rentals': 1,
+                'promotions': 2,
+                'wallet': 3,
+                'security': 4,
+                'marina': 0,
+                'golf': 0,
+                'marketplace': 0,
+                'guest-access': 0
+            };
+
+            if (navMap[screenId] !== undefined) {
+                const navIndex = navMap[screenId];
+                if (navIndex < 5) {
+                    document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
