@@ -1,0 +1,27 @@
+{
+  "name": "puerto-aventuras-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Puerto Aventuras Integrated Digital Ecosystem - Super-App for luxury residential community",
+  "workspaces": [
+    "packages/crypto",
+    "packages/shared",
+    "packages/database",
+    "packages/auth",
+    "packages/discovery"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces",
+    "test:crypto": "npm test --workspace=@pa/crypto",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.5",
+    "turbo": "^1.12.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

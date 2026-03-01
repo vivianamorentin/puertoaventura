@@ -1,0 +1,1048 @@
+// Puerto Aventuras Super-App - Database Schema
+// LFPDPPP Compliant - AES-256 Encrypted PII Fields
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  RESIDENT
+  STAFF
+  ADMIN
+  PROVIDER
+}
+
+enum PropertyType {
+  VILLA
+  CONDO
+  APARTMENT
+  COMMERCIAL
+}
+
+enum VehicleType {
+  CAR
+  SUV
+  TRUCK
+  GOLF_CART
+  MOTORCYCLE
+}
+
+enum VisitorStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CHECKED_OUT
+}
+
+enum WalletStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  REFUND
+  LOYALTY_EARNED
+  LOYALTY_REDEEMED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SlipSize {
+  SMALL_20FT    // 6-7 meters
+  MEDIUM_30FT   // 9-10 meters
+  LARGE_40FT    // 12-13 meters
+  XLARGE_50FT   // 15-16 meters
+  XXLARGE_60FT  // 18+ meters
+}
+
+enum SlipStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  RESERVED
+}
+
+enum BoatStatus {
+  ACTIVE
+  INACTIVE
+  MOORING
+}
+
+enum MarinaReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum FacilityType {
+  GOLF_TEE
+  TENNIS_COURT
+  PICKLEBALL_COURT
+  GYM
+  SPA
+  POOL
+}
+
+enum FacilityStatus {
+  ACTIVE
+  MAINTENANCE
+  CLOSED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum RestaurantStatus {
+  OPEN
+  CLOSED
+  TEMPORARILY_CLOSED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+  DINE_IN
+}
+
+// ============================================================================
+// DISCOVERY MODULE ENUMS
+// ============================================================================
+
+enum CheckInVisibility {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum BadgeRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum BadgeRequirement {
+  FIRST_CHECK_IN
+  CHECK_INS_10
+  CHECK_INS_50
+  CHECK_INS_100
+  REVIEWS_5
+  REVIEWS_20
+  STREAK_7
+  STREAK_30
+  PLACES_DISCOVERED_20
+  EXPLORE_ALL_CATEGORIES
+}
+
+enum ChallengeType {
+  CHECK_IN_AT_PLACES
+  EXPLORE_CATEGORY
+  BRING_FRIENDS
+  WEEKLY_WARRIOR
+  REVIEW_MASTER
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum MembershipTier {
+  BASIC
+  PROFESSIONAL
+  PREMIUM
+  ENTERPRISE
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+}
+
+enum AdType {
+  SPONSORED_LISTING
+  FEATURED_PLACE
+  BANNER_AD
+  PROMOTED_PIN
+}
+
+enum AdStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  PENDING_APPROVAL
+  REJECTED
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+// User Management
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   // bcrypt hash
+
+  // Personal Information (plain for search, encrypted for privacy)
+  firstName    String
+  lastName     String
+
+  // Encrypted PII (LFPDPPP compliance)
+  encryptedPhone    String? // Encrypted: +52-984-123-4567
+  encryptedRfc      String? // Encrypted: Mexican tax ID
+  encryptedCurp     String? // Encrypted: Mexican unique ID
+
+  // User Settings
+  role        UserRole @default(RESIDENT)
+  isActive    Boolean  @default(true)
+  emailVerified Boolean @default(false)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+
+  // Relationships
+  properties  Property[]
+  visitors    Visitor[]
+  wallet      Wallet?
+  reservations Reservation[]
+  orders      Order[]
+  gamification UserGamification?
+  reviews      Review[]
+  checkIns     CheckIn[]
+  badges       UserBadge[]
+  completedChallenges CompletedChallenge[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// Property & Vehicles
+model Property {
+  id                String      @id @default(uuid())
+  userId            String
+
+  // Property Details
+  type              PropertyType
+  address           String
+  lotNumber         String?
+
+  // Encrypted PII
+  encryptedOwnerName String?
+
+  // Location (optional link to Discovery Place)
+  placeId           String?     @unique
+  place             Place?      @relation(fields: [placeId], references: [id])
+
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relationships
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicles          Vehicle[]
+
+  @@index([userId])
+  @@map("properties")
+}
+
+model Vehicle {
+  id          String      @id @default(uuid())
+  propertyId  String
+
+  // Vehicle Details
+  licensePlate String     @unique // For LPR system
+  type        VehicleType
+  brand       String
+  model       String
+  color       String
+  year        Int?
+
+  // LPR (License Plate Recognition) Data
+  lprConfidence Float?    // AI confidence score (0-1)
+  lprImageUrl   String?   // S3 URL
+  lprCapturedAt DateTime?
+
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relationships
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([licensePlate])
+  @@index([propertyId])
+  @@map("vehicles")
+}
+
+// Visitor Management
+model Visitor {
+  id          String        @id @default(uuid())
+  name        String
+  encryptedPhone String?    // Encrypted for privacy
+
+  // Visit Details
+  hostName    String
+  visitPurpose String?
+  status      VisitorStatus @default(PENDING)
+
+  // QR Code Access
+  qrCode      String        @unique // Base64 encoded QR data
+  validFrom   DateTime
+  validUntil  DateTime
+
+  // Check-in/out
+  checkedInAt DateTime?
+  checkedOutAt DateTime?
+
+  // Timestamps
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relationships
+  createdBy   User?         @relation(fields: [createdById], references: [id])
+  createdById String?
+
+  @@index([qrCode])
+  @@index([validUntil])
+  @@index([status])
+  @@map("visitors")
+}
+
+// Digital Wallet
+model Wallet {
+  id        String        @id @default(uuid())
+  userId    String        @unique
+
+  // Balance
+  balance   Decimal       @default(0) @db.Decimal(10, 2)
+  status    WalletStatus  @default(ACTIVE)
+
+  // Loyalty Points
+  loyaltyPoints Int       @default(0)
+
+  // Timestamps
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relationships
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  walletId    String
+
+  // Transaction Details
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  description String
+
+  // Transaction Status
+  status      TransactionStatus @default(PENDING)
+
+  // References
+  orderId     String?           // For marketplace purchases
+  reservationId String?         // For facility/marina bookings
+
+  // Balance After Transaction
+  balanceAfter Decimal          @db.Decimal(10, 2)
+
+  // Timestamps
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relationships
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+// Marina Module
+model Slip {
+  id        String      @id @default(uuid())
+  number    String      @unique // e.g., "A-001", "B-045"
+
+  // Physical Dimensions
+  size      SlipSize
+  length    Float       // meters
+  width     Float       // meters
+  depth     Float       // meters
+
+  // Status
+  status    SlipStatus  @default(AVAILABLE)
+
+  // Pricing
+  dailyRate Decimal     @db.Decimal(10, 2)
+
+  // Amenities
+  hasWater      Boolean @default(false)
+  hasElectricity Boolean @default(false)
+  hasPumpOut    Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relationships
+  reservations MarinaReservation[]
+
+  @@index([number])
+  @@index([status])
+  @@map("slips")
+}
+
+model Boat {
+  id                String      @id @default(uuid())
+
+  // Boat Details
+  name              String
+  registrationNumber String     @unique // Mexican boat registration
+  length            Float       // meters
+  beam              Float       // meters
+  draft             Float       // meters
+
+  // Encrypted PII
+  encryptedOwnerName String?
+
+  // Status
+  status            BoatStatus  @default(ACTIVE)
+
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relationships
+  reservations      MarinaReservation[]
+
+  @@index([registrationNumber])
+  @@map("boats")
+}
+
+model MarinaReservation {
+  id        String                  @id @default(uuid())
+  slipId    String
+  boatId    String
+
+  // Reservation Period
+  startDate DateTime
+  endDate   DateTime
+
+  // Status
+  status    MarinaReservationStatus @default(PENDING)
+
+  // Pricing
+  totalAmount Decimal                @db.Decimal(10, 2)
+
+  // Service Requests
+  waterRequested      Boolean @default(false)
+  electricityRequested Boolean @default(false)
+  pumpOutRequested    Boolean @default(false)
+
+  // Check-in/out
+  checkedInAt  DateTime?
+  checkedOutAt DateTime?
+
+  // Timestamps
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  // Relationships
+  slip      Slip                    @relation(fields: [slipId], references: [id])
+  boat      Boat                    @relation(fields: [boatId], references: [id])
+
+  @@index([slipId, startDate])
+  @@index([boatId])
+  @@map("marina_reservations")
+}
+
+// Golf & Sports Module
+model Facility {
+  id        String        @id @default(uuid())
+
+  // Facility Details
+  name      String
+  type      FacilityType
+  status    FacilityStatus @default(ACTIVE)
+
+  // Location
+  latitude    Decimal?    @db.Decimal(10, 8)
+  longitude   Decimal?    @db.Decimal(11, 8)
+  placeId     String?     @unique
+  place       Place?      @relation(fields: [placeId], references: [id])
+
+  // Capacity
+  capacity  Int
+
+  // Pricing
+  hourlyRate Decimal       @db.Decimal(10, 2)
+
+  // IoT Integration
+  iotDeviceId String?      // MQTT device ID for lighting/automation
+
+  // Location
+  building  String?
+  floor     String?
+
+  // Timestamps
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relationships
+  reservations Reservation[]
+
+  @@index([type])
+  @@index([status])
+  @@map("facilities")
+}
+
+model Reservation {
+  id          String            @id @default(uuid())
+  facilityId  String
+  userId      String
+
+  // Reservation Period
+  startTime   DateTime
+  endTime     DateTime
+
+  // Status
+  status      ReservationStatus @default(PENDING)
+
+  // Participants
+  participants Int              @default(1)
+
+  // Special Requests
+  notes       String?
+
+  // Timestamps
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relationships
+  facility    Facility          @relation(fields: [facilityId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+
+  @@index([facilityId, startTime])
+  @@index([userId])
+  @@map("reservations")
+}
+
+// Marketplace Module
+model Restaurant {
+  id          String          @id @default(uuid())
+
+  // Restaurant Details
+  name        String
+  description String?
+  status      RestaurantStatus @default(OPEN)
+
+  // Location
+  latitude    Decimal?        @db.Decimal(10, 8)
+  longitude   Decimal?        @db.Decimal(11, 8)
+  placeId     String?         @unique
+  place       Place?          @relation(fields: [placeId], references: [id])
+
+  // Delivery Settings
+  deliveryEnabled Boolean     @default(false)
+  deliveryFee      Decimal    @default(0) @db.Decimal(10, 2)
+  minDeliveryAmount Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Commission
+  commissionRate Decimal      @default(0.10) @db.Decimal(5, 4) // 10% = 0.1000
+
+  // Contact
+  phone       String?
+  address     String?
+
+  // Hours (JSON format for flexibility)
+  openingHours String?        // '{"monday": {"open": "11:00", "close": "23:00"}}'
+
+  // Timestamps
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relationships
+  orders      Order[]
+
+  @@index([status])
+  @@map("restaurants")
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  restaurantId String
+  userId       String
+
+  // Order Details
+  type         OrderType
+  status       OrderStatus @default(PENDING)
+
+  // Items (JSON array)
+  items        String      // '[{"name": "Taco", "quantity": 2, "price": 15.00}]'
+
+  // Pricing
+  subtotal     Decimal     @db.Decimal(10, 2)
+  deliveryFee  Decimal     @default(0) @db.Decimal(10, 2)
+  commission   Decimal     @default(0) @db.Decimal(10, 2)
+  total        Decimal     @db.Decimal(10, 2)
+
+  // Delivery Details
+  deliveryAddress String?
+  deliveryNotes   String?
+
+  // Delivery Tracking
+  estimatedDeliveryTime DateTime?
+  actualDeliveryTime    DateTime?
+
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relationships
+  restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@index([restaurantId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ============================================================================
+// DISCOVERY MODULE MODELS
+// ============================================================================
+
+// Place Management
+model Place {
+  id          String   @id @default(uuid())
+
+  // Information
+  name        String
+  description String?
+
+  // Location (WGS84 coordinates)
+  latitude    Decimal  @db.Decimal(10, 8)
+  longitude   Decimal  @db.Decimal(11, 8)
+
+  // Address
+  address     String
+  building    String?
+  floor       String?
+
+  // Categorization
+  categoryId  String
+  category    PlaceCategory @relation(fields: [categoryId], references: [id])
+
+  // Back-references to existing models (they hold the foreign key to Place)
+  restaurant   Restaurant?
+  facility      Facility?
+  property      Property?
+
+  // Contact
+  phone       String?
+  website     String?
+  email       String?
+
+  // Hours (JSON)
+  openingHours String?
+
+  // Images
+  imageUrl    String?
+  images      String?
+
+  // Status
+  verified    Boolean   @default(false)
+  active      Boolean   @default(true)
+
+  // Monetization
+  promotedUntil DateTime?
+  featuredPriority Int @default(0)
+
+  // Community data
+  totalCheckIns Int      @default(0)
+  totalReviews   Int      @default(0)
+  averageRating  Decimal? @db.Decimal(3, 2)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  reviews     Review[]
+  checkIns    CheckIn[]
+  ads         PlaceAd[]
+  challenges  PlaceChallenge[]
+  memberships BusinessMembership[]
+
+  @@index([latitude, longitude])
+  @@index([categoryId])
+  @@index([active, promotedUntil])
+  @@index([averageRating])
+  @@map("places")
+}
+
+model PlaceCategory {
+  id          String   @id @default(uuid())
+
+  name        String   @unique
+  displayName String
+  description String?
+  icon        String?
+  color       String?
+
+  // Hierarchy
+  parentId    String?
+  parent      PlaceCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    PlaceCategory[] @relation("CategoryHierarchy")
+
+  displayOrder Int      @default(0)
+  visible      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  places      Place[]
+
+  @@index([parentId])
+  @@map("place_categories")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  placeId     String
+  userId      String
+
+  rating      Int
+  title       String?
+  content     String
+  images      String?
+
+  // Moderation
+  flagged     Boolean  @default(false)
+  helpful     Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  place       Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([placeId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model CheckIn {
+  id          String   @id @default(uuid())
+  placeId     String
+  userId      String
+
+  // Location verification
+  verifiedLatitude  Decimal? @db.Decimal(10, 8)
+  verifiedLongitude Decimal? @db.Decimal(11, 8)
+  accuracy         Float?
+
+  // Social
+  message     String?
+  photos      String?
+  visibility  CheckInVisibility @default(PUBLIC)
+
+  // Gamification
+  pointsEarned    Int @default(0)
+  badgeUnlocked   String?
+
+  // Engagement
+  likes       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+
+  place       Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([placeId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("check_ins")
+}
+
+// Gamification
+model UserGamification {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+
+  // Points and level
+  totalPoints     Int      @default(0)
+  currentLevel    Int      @default(1)
+  pointsToNext    Int      @default(100)
+
+  // Stats
+  totalCheckIns   Int      @default(0)
+  totalReviews    Int      @default(0)
+  placesDiscovered Int     @default(0)
+
+  // Streak
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastCheckInDate DateTime?
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id])
+  badges          UserBadge[]
+  completedChallenges CompletedChallenge[]
+
+  @@index([totalPoints])
+  @@index([currentLevel])
+  @@map("user_gamification")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+
+  name        String
+  displayName String
+  description String
+  icon        String?
+  rarity      BadgeRarity @default(COMMON)
+
+  // Unlock criteria
+  requirementType BadgeRequirement
+  requirementValue Int
+
+  // Rewards
+  pointsReward    Int      @default(0)
+  exclusiveAccess Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id          String   @id @default(uuid())
+  userId      String
+  badgeId     String
+  gamificationId String
+
+  // Progress
+  progress    Int      @default(0)
+  unlocked    Boolean  @default(false)
+  unlockedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  user        User     @relation(fields: [userId], references: [id])
+  badge       Badge    @relation(fields: [badgeId], references: [id])
+  gamification UserGamification @relation(fields: [gamificationId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+
+  name        String
+  description String
+  type        ChallengeType
+
+  // Duration
+  startDate   DateTime
+  endDate     DateTime
+
+  // Rewards
+  pointsReward    Int
+  badgeReward     String?
+
+  // Participation
+  maxParticipants Int?
+  currentParticipants Int @default(0)
+
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  places      PlaceChallenge[]
+  completions CompletedChallenge[]
+
+  @@map("challenges")
+}
+
+model PlaceChallenge {
+  placeId     String
+  challengeId String
+
+  order       Int      @default(0)
+
+  place       Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@id([placeId, challengeId])
+  @@map("place_challenges")
+}
+
+model CompletedChallenge {
+  id          String   @id @default(uuid())
+  userId      String
+  challengeId String
+  gamificationId String
+
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  user        User     @relation(fields: [userId], references: [id])
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  gamification UserGamification @relation(fields: [gamificationId], references: [id])
+
+  @@unique([userId, challengeId])
+  @@map("completed_challenges")
+}
+
+model Leaderboard {
+  id          String   @id @default(uuid())
+
+  period      LeaderboardPeriod
+  startDate   DateTime
+  endDate     DateTime?
+
+  rankings    String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leaderboards")
+}
+
+// Monetization
+model BusinessMembership {
+  id          String   @id @default(uuid())
+
+  businessName String
+  contactName  String
+  email        String
+  phone        String
+
+  tier         MembershipTier @default(BASIC)
+  billingCycle BillingCycle @default(MONTHLY)
+  price        Decimal       @db.Decimal(10, 2)
+
+  status       MembershipStatus @default(ACTIVE)
+
+  startDate    DateTime
+  endDate      DateTime?
+
+  promotedPlacesCount Int @default(0)
+  adsAllowedCount     Int @default(0)
+  analyticsAccess     Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  places      Place[]
+  ads         PlaceAd[]
+
+  @@index([status])
+  @@index([tier])
+  @@map("business_memberships")
+}
+
+model PlaceAd {
+  id          String   @id @default(uuid())
+  placeId     String
+  membershipId String?
+
+  title       String
+  description String
+  imageUrl    String?
+  linkUrl     String?
+
+  adType      AdType @default(SPONSORED_LISTING)
+  priority    Int    @default(0)
+
+  dailyBudget Decimal? @db.Decimal(10, 2)
+  startDate   DateTime
+  endDate     DateTime?
+
+  // Metrics
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+
+  status      AdStatus @default(ACTIVE)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  place       Place             @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  membership  BusinessMembership? @relation(fields: [membershipId], references: [id])
+
+  @@index([placeId])
+  @@index([status])
+  @@map("place_ads")
+}
