@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Puerto Aventuras - Mapa Interactivo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ocean-blue: #0066CC;
+            --sand-white: #FAF8F5;
+            --sunset-orange: #FF6B35;
+            --palm-green: #22C55E;
+            --deep-navy: #0A1628;
+            --coral-red: #EF4444;
+            --gold: #FFD700;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-100);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: var(--sand-white);
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--sand-white);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            background: var(--deep-navy);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #E5E7EB;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--deep-navy);
+        }
+
+        .search-bar {
+            background: #F3F4F6;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-bar input::placeholder {
+            color: #9CA3AF;
+        }
+
+        /* Map Container */
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #E8F4FD 0%, #D1E9FC 100%);
+            overflow: hidden;
+        }
+
+        .map-bg {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image:
+                linear-gradient(rgba(200, 200, 200, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Map Elements */
+        .map-marker {
+            position: absolute;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .map-marker:hover {
+            transform: scale(1.2);
+            z-index: 20;
+        }
+
+        .map-marker.user-location {
+            font-size: 40px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .marker-label {
+            position: absolute;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--deep-navy);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+
+        /* Categories */
+        .category-filter {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 16px;
+            overflow-x: auto;
+        }
+
+        .category-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .category-chip.active {
+            background: var(--ocean-blue);
+            color: white;
+        }
+
+        .category-chip:not(.active) {
+            background: #F3F4F6;
+            color: #6B7280;
+        }
+
+        /* Place Card */
+        .place-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 20px 16px;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .place-card:hover {
+            border-color: var(--ocean-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .place-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .place-icon {
+            font-size: 40px;
+        }
+
+        .place-info {
+            flex: 1;
+        }
+
+        .place-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--deep-navy);
+            margin-bottom: 4px;
+        }
+
+        .place-category {
+            font-size: 13px;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+
+        .place-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+        }
+
+        .place-rating .stars {
+            color: #FFB800;
+        }
+
+        .place-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-top: 12px;
+        }
+
+        .place-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-open {
+            background: var(--palm-green);
+            color: white;
+        }
+
+        .status-busy {
+            background: var(--sunset-orange);
+            color: white;
+        }
+
+        .status-closed {
+            background: #9CA3AF;
+            color: white;
+        }
+
+        /* Route Button */
+        .route-btn {
+            background: var(--ocean-blue);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 20px 20px;
+            width: calc(100% - 40px);
+            transition: all 0.2s;
+        }
+
+        .route-btn:hover {
+            background: #0052A3;
+            transform: translateY(-2px);
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 375px;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .bottom-sheet.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100%); }
+            to { transform: translateX(-50%) translateY(0); }
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .sheet-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--deep-navy);
+        }
+
+        .sheet-close {
+            background: #F3F4F6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Route Info */
+        .route-info {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .route-time {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .route-time-icon {
+            font-size: 24px;
+        }
+
+        .route-time-text {
+            flex: 1;
+        }
+
+        .route-time-text .main {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--deep-navy);
+        }
+
+        .route-time-text .sub {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        . ETA {
+            text-align: center;
+            padding: 12px;
+            background: var(--palm-green);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 0 20px 20px;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            background: #F9FAFB;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #E5E7EB;
+        }
+
+        .action-btn .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .action-btn .label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #4B5563;
+            text-align: center;
+        }
+
+        /* Traffic Indicator */
+        .traffic-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .traffic-green {
+            background: #DCFCE7;
+            color: #16A34A;
+        }
+
+        .traffic-yellow {
+            background: #FEF3C7;
+            color: #CA8A04;
+        }
+
+        .traffic-red {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        /* Back Button */
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--ocean-blue);
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--deep-navy);
+            padding: 0 20px;
+            margin-bottom: 12px;
+        }
+
+        /* Help Text */
+        .help-text {
+            text-align: center;
+            font-size: 12px;
+            color: #6B7280;
+            padding: 16px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>📶 5G</span>
+        </div>
+
+        <!-- Map Screen -->
+        <div class="screen active" id="map-screen">
+            <div class="header">
+                <span>☰</span>
+                <h1>Mapa PA</h1>
+                <span>🔔</span>
+            </div>
+
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="Buscar negocios, servicios...">
+                <span>🎤</span>
+            </div>
+
+            <div class="category-filter">
+                <div class="category-chip active" onclick="filterCategory('all')">📍 Todos</div>
+                <div class="category-chip" onclick="filterCategory('restaurant')">🍕 Restaurantes</div>
+                <div class="category-chip" onclick="filterCategory('services')">🛠️ Servicios</div>
+                <div class="category-chip" onclick="filterCategory('marina')">🛥️ Marina</div>
+            </div>
+
+            <div class="map-container">
+                <div class="map-bg">
+                    <!-- User Location -->
+                    <div class="map-marker user-location" style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
+                        📍
+                    </div>
+
+                    <!-- Restaurants -->
+                    <div class="map-marker" style="left: 20%; top: 30%;" onclick="showPlaceDetail('marios')" data-category="restaurant">🍕</div>
+                    <div class="map-marker" style="left: 70%; top: 25%;" onclick="showPlaceDetail('tacos')" data-category="restaurant">🌮</div>
+                    <div class="map-marker" style="left: 35%; top: 60%;" onclick="showPlaceDetail('sushi')" data-category="restaurant">🍣</div>
+                    <div class="map-marker" style="left: 80%; top: 70%;" onclick="showPlaceDetail('cafeteria')" data-category="restaurant">☕</div>
+
+                    <!-- Services -->
+                    <div class="map-marker" style="left: 15%; top: 45%;" onclick="showPlaceDetail('security')" data-category="services">🔒</div>
+                    <div class="map-marker" style="left: 85%; top: 40%;" onclick="showPlaceDetail('golf')" data-category="services">⛳</div>
+                    <div class="map-marker" style="left: 60%; top: 20%;" onclick="showPlaceDetail('tennis')" data-category="services">🎾</div>
+
+                    <!-- Marina -->
+                    <div class="map-marker" style="left: 25%; top: 80%;" onclick="showPlaceDetail('marina')" data-category="marina">⚓</div>
+                    <div class="map-marker" style="left: 75%; top: 85%;" onclick="showPlaceDetail('rental')" data-category="marina">🛥️</div>
+                </div>
+            </div>
+
+            <div class="section-title">Lugares Cercanos</div>
+
+            <div class="place-card" onclick="showPlaceDetail('marios')">
+                <div class="place-header">
+                    <div class="place-icon">🍕</div>
+                    <div class="place-info">
+                        <div class="place-name">Mario's Pizza</div>
+                        <div class="place-category">Italiana • Pizza • Pasta</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>4.8 (245)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto ahora</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.3 km • 4 min</span>
+                    <span class="traffic-indicator traffic-green">🟢 Tráfico fluido</span>
+                </div>
+            </div>
+
+            <div class="place-card" onclick="showPlaceDetail('security')">
+                <div class="place-header">
+                    <div class="place-icon">🔒</div>
+                    <div class="place-info">
+                        <div class="place-name">Seguridad Principal</div>
+                        <div class="place-category">Control de Acceso • 24/7</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>5.0 (89)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto 24h</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.1 km • 1 min</span>
+                    <span class="traffic-indicator traffic-green">🟢 Disponible</span>
+                </div>
+            </div>
+
+            <button class="route-btn" onclick="showRoute()">
+                🧭 Navegar a Destino
+            </button>
+
+            <div class="help-text">
+                💡 Tips: Toca los marcadores en el mapa para ver detalles
+            </div>
+        </div>
+
+        <!-- Bottom Sheet for Place Details -->
+        <div class="bottom-sheet" id="place-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title" id="sheet-title">Mario's Pizza</div>
+                <button class="sheet-close" onclick="closeSheet()">✕</button>
+            </div>
+
+            <div class="place-header">
+                <div class="place-icon" id="sheet-icon">🍕</div>
+                <div class="place-info">
+                    <div class="place-name" id="sheet-name">Mario's Pizza</div>
+                    <div class="place-category" id="sheet-category">Italiana • Pizza • Pasta</div>
+                    <div class="place-rating">
+                        <span class="stars" id="sheet-stars">⭐⭐⭐⭐⭐</span>
+                        <span id="sheet-rating">4.8 (245)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="route-info">
+                <div class="route-time">
+                    <div class="route-time-icon">🧭</div>
+                    <div class="route-time-text">
+                        <div class="main">4 minutos a pie</div>
+                        <div class="sub">0.3 km • Calle Marina #45</div>
+                    </div>
+                    <div class="ETA">ETA 9:45</div>
+                </div>
+            </div>
+
+            <div class="place-meta" style="margin-bottom: 16px;">
+                <span>📍 Marina Plaza</span>
+                <span>⏰ Abierto hasta 10 PM</span>
+                <span>💵 $$ - $$$</span>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button class="route-btn" style="flex: 1; margin: 0;" onclick="startNavigation()">
+                    🧭 Navegar
+                </button>
+                <button class="route-btn" style="flex: 1; margin: 0; background: var(--sunset-orange);" onclick="callPlace()">
+                    📞 Llamar
+                </button>
+            </div>
+
+            <div class="help-text" style="margin-top: 16px;">
+                🔥 50% DESC en tu primera orden con código: PUERTO50
+            </div>
+        </div>
+
+        <!-- Route Screen -->
+        <div class="screen" id="route-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('map-screen')">←</button>
+                <h1>Navegando</h1>
+                <span></span>
+            </div>
+
+            <div class="route-info" style="margin: 20px;">
+                <div class="route-time">
+                    <div class="route-time-icon">🛣️</div>
+                    <div class="route-time-text">
+                        <div class="main">4 min (0.3 km)</div>
+                        <div class="sub">Calle Marina → Puerto Avenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container" style="height: 400px;">
+                <div class="map-bg">
+                    <!-- Route Line (simplified) -->
+                    <svg style="position: absolute; width: 100%; height: 100%; pointer-events: none;">
+                        <path d="M 180 400 Q 200 350 250 320 Q 300 280 320 250"
+                              stroke="#0066CC"
+                              stroke-width="4"
+                              fill="none"
+                              stroke-dasharray="10,5"
+                              stroke-linecap="round"/>
+                        <!-- Destination -->
+                        <div style="position: absolute; left: 85%; top: 62%; font-size: 32px;">🍕</div>
+                        <!-- Origin -->
+                        <div style="position: absolute; left: 48%; top: 78%; font-size: 32px;">📍</div>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="ETA" style="margin: 20px;">
+                🕐 Llegada: 9:45 AM
+            </div>
+
+            <div class="place-card">
+                <div class="place-header">
+                    <div class="place-icon">🍕</div>
+                    <div class="place-info">
+                        <div class="place-name">Mario's Pizza</div>
+                        <div class="place-category">Destino</div>
+                        <div class="place-status status-open">Abierto</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 200 m restantes</span>
+                    <span class="traffic-indicator traffic-green">🟢 Tráfico fluido</span>
+                </div>
+            </div>
+
+            <div class="section-title">Instrucciones</div>
+
+            <div style="padding: 0 20px;">
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: #F9FAFB; border-radius: 12px;">
+                    <div style="font-size: 24px;">1️⃣</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Derecho en Calle Marina</div>
+                        <div style="font-size: 13px; color: #6B7280;">200 m</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: #F9FAFB; border-radius: 12px;">
+                    <div style="font-size: 24px;">2️⃣</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Gira a la derecha</div>
+                        <div style="font-size: 13px; color: #6B7280;">En Puerto Avenue</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; padding: 12px; background: #F9FAFB; border-radius: 12px;">
+                    <div style="font-size: 24px;">3️⃣</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Destino a la izquierda</div>
+                        <div style="font-size: 13px; color: #6B7280;">Mario's Pizza</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="route-btn" onclick="showScreen('map-screen')" style="background: var(--coral-red);">
+                ✕ Cancelar Navegación
+            </button>
+
+            <div class="help-text">
+                💡 La ruta se actualiza en tiempo real con el tráfico
+            </div>
+        </div>
+
+        <!-- Services Screen -->
+        <div class="screen" id="services-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('map-screen')">←</button>
+                <h1>Servicios</h1>
+                <span></span>
+            </div>
+
+            <div class="section-title">Servicios Cercanos</div>
+
+            <div class="place-card" onclick="showPlaceDetail('security')">
+                <div class="place-header">
+                    <div class="place-icon">🔒</div>
+                    <div class="place-info">
+                        <div class="place-name">Seguridad Principal</div>
+                        <div class="place-category">Control de Acceso • 24/7</div>
+                        <div class="place-status status-open">Abierto 24h</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.1 km • 1 min</span>
+                    <span>🟢 Disponible</span>
+                </div>
+            </div>
+
+            <div class="place-card" onclick="showPlaceDetail('golf')">
+                <div class="place-header">
+                    <div class="place-icon">⛳</div>
+                    <div class="place-info">
+                        <div class="place-name">Golf Course</div>
+                        <div class="place-category">Club de Golf • 18 hoyos</div>
+                        <div class="place-status status-busy">Ocupado ahora</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.8 km • 10 min</span>
+                    <span>🟡 Alta demanda</span>
+                </div>
+            </div>
+
+            <div class="place-card" onclick="showPlaceDetail('marina')">
+                <div class="place-header">
+                    <div class="place-icon">⚓</div>
+                    <div class="place-info">
+                        <div class="place-name">Marina Puerto Aventuras</div>
+                        <div class="place-category">Embarcaciones • Slips</div>
+                        <div class="place-status status-open">Abierto 6am-10pm</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.3 km • 4 min</span>
+                    <span>🟢 12 slips disponibles</span>
+                </div>
+            </div>
+
+            <div class="place-card" onclick="showPlaceDetail('tennis')">
+                <div class="place-header">
+                    <div class="place-icon">🎾</div>
+                    <div class="place-info">
+                        <div class="place-name">Tennis & Pickleball</div>
+                        <div class="place-category">Deportes • Canchas</div>
+                        <div class="place-status status-open">Abierto 6am-9pm</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.5 km • 6 min</span>
+                    <span>🟢 3 canchas libres</span>
+                </div>
+            </div>
+
+            <div class="help-text">
+                💡 Toca cualquier servicio para ver detalles y navegar
+            </div>
+        </div>
+
+        <!-- Restaurants Screen -->
+        <div class="screen" id="restaurants-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('map-screen')">←</button>
+                <h1>Restaurantes</h1>
+                <span></span>
+            </div>
+
+            <div class="section-title">Restaurantes Cercanos</div>
+
+            <div class="place-card">
+                <div class="place-header">
+                    <div class="place-icon">🍕</div>
+                    <div class="place-info">
+                        <div class="place-name">Mario's Pizza</div>
+                        <div class="place-category">Italiana • Pizza • Pasta</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>4.8 (245 reseñas)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto hasta 10 PM</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.3 km</span>
+                    <span>⏰ 30-45 min</span>
+                    <span>💵 $$</span>
+                </div>
+                <div style="background: var(--sunset-orange); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                    🔥 50% DESC primera orden
+                </div>
+            </div>
+
+            <div class="place-card">
+                <div class="place-header">
+                    <div class="place-icon">🌮</div>
+                    <div class="place-info">
+                        <div class="place-name">Taco Libre</div>
+                        <div class="place-category">Mexicana • Tacos • Street Food</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>4.7 (189 reseñas)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto hasta 11 PM</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.5 km</span>
+                    <span>⏰ 15-30 min</span>
+                    <span>💵 $</span>
+                </div>
+                <div style="background: var(--palm-green); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                    ⭐ Chips gratis
+                </div>
+            </div>
+
+            <div class="place-card">
+                <div class="place-header">
+                    <div class="place-icon">🍣</div>
+                    <div class="place-info">
+                        <div class="place-name">Sushi Express</div>
+                        <div class="place-category">Japonesa • Sushi • Ramen</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐</span>
+                            <span>4.2 (156 reseñas)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto hasta 9:30 PM</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.7 km</span>
+                    <span>⏰ 20-40 min</span>
+                    <span>💵 $$</span>
+                </div>
+                <div style="background: var(--ocean-blue); color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 700; margin-top: 8px;">
+                    🍣 2x1 rollos hoy
+                </div>
+            </div>
+
+            <div class="place-card">
+                <div class="place-header">
+                    <div class="place-icon">☕</div>
+                    <div class="place-info">
+                        <div class="place-name">Cafeteria Porto Bello</div>
+                        <div class="place-category">Café • Desayuno • Postres</div>
+                        <div class="place-rating">
+                            <span class="stars">⭐⭐⭐⭐⭐</span>
+                            <span>4.9 (312 reseñas)</span>
+                        </div>
+                        <div class="place-status status-open">Abierto desde 6 AM</div>
+                    </div>
+                </div>
+                <div class="place-meta">
+                    <span>📍 0.2 km</span>
+                    <span>⏰ 10-20 min</span>
+                    <span>💵 $$</span>
+                </div>
+            </div>
+
+            <div class="help-text">
+                💡 Ordena desde la app y recibe puntos de lealtad
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Place data
+        const places = {
+            marios: {
+                name: "Mario's Pizza",
+                icon: "🍕",
+                category: "Restaurantes",
+                rating: "4.8 (245)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.3 km",
+                eta: "4 min"
+            },
+            tacos: {
+                name: "Taco Libre",
+                icon: "🌮",
+                category: "Restaurantes",
+                rating: "4.7 (189)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.5 km",
+                eta: "6 min"
+            },
+            sushi: {
+                name: "Sushi Express",
+                icon: "🍣",
+                category: "Restaurantes",
+                rating: "4.2 (156)",
+                stars: "⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.7 km",
+                eta: "8 min"
+            },
+            cafeteria: {
+                name: "Cafeteria Porto Bello",
+                icon: "☕",
+                category: "Restaurantes",
+                rating: "4.9 (312)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.2 km",
+                eta: "2 min"
+            },
+            security: {
+                name: "Seguridad Principal",
+                icon: "🔒",
+                category: "Servicios",
+                rating: "5.0 (89)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.1 km",
+                eta: "1 min"
+            },
+            golf: {
+                name: "Golf Course",
+                icon: "⛳",
+                category: "Servicios",
+                rating: "4.6 (234)",
+                stars: "⭐⭐⭐⭐",
+                status: "busy",
+                distance: "0.8 km",
+                eta: "10 min"
+            },
+            marina: {
+                name: "Marina Puerto Aventuras",
+                icon: "⚓",
+                category: "Marina",
+                rating: "4.7 (178)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.3 km",
+                eta: "4 min"
+            },
+            rental: {
+                name: "Renta de Yates",
+                icon: "🛥️",
+                category: "Marina",
+                rating: "4.8 (92)",
+                stars: "⭐⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.4 km",
+                eta: "5 min"
+            },
+            tennis: {
+                name: "Tennis & Pickleball",
+                icon: "🎾",
+                category: "Servicios",
+                rating: "4.5 (145)",
+                stars: "⭐⭐⭐⭐",
+                status: "open",
+                distance: "0.5 km",
+                eta: "6 min"
+            }
+        };
+
+        function showPlaceDetail(placeId) {
+            const place = places[placeId];
+            if (!place) return;
+
+            document.getElementById('sheet-title').textContent = place.name;
+            document.getElementById('sheet-icon').textContent = place.icon;
+            document.getElementById('sheet-name').textContent = place.name;
+            document.getElementById('sheet-category').textContent = getCategoryName(place.category);
+            document.getElementById('sheet-stars').textContent = place.stars;
+            document.getElementById('sheet-rating').textContent = place.rating;
+
+            document.getElementById('place-sheet').classList.add('active');
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'Restaurantes': 'Italiana • Pizza • Pasta',
+                'Servicios': 'Control de Acceso • 24/7',
+                'Marina': 'Embarcaciones • Slips'
+            };
+            return names[category] || category;
+        }
+
+        function closeSheet() {
+            document.getElementById('place-sheet').classList.remove('active');
+        }
+
+        function showRoute() {
+            document.getElementById('place-sheet').classList.remove('active');
+            showScreen('route-screen');
+        }
+
+        function startNavigation() {
+            document.getElementById('place-sheet').classList.remove('active');
+            showScreen('route-screen');
+        }
+
+        function callPlace() {
+            alert('Conectando con ' + document.getElementById('sheet-title').textContent + '...');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function filterCategory(category) {
+            // Update chips
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter markers
+            document.querySelectorAll('.map-marker').forEach(marker => {
+                if (category === 'all' || marker.dataset.category === category) {
+                    marker.style.display = 'block';
+                } else {
+                    marker.style.display = 'none';
+                }
+            });
+
+            // Show corresponding screen
+            if (category === 'services') {
+                showScreen('services-screen');
+            } else if (category === 'restaurant') {
+                showScreen('restaurants-screen');
+            } else {
+                showScreen('map-screen');
+            }
+        }
+    </script>
+</body>
+</html>
