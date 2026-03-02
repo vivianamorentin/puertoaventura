@@ -745,6 +745,10 @@
                     <span class="icon">📅</span>
                     <span class="label">Mi<br>Día</span>
                 </div>
+                <div class="action-btn" onclick="openMap()">
+                    <span class="icon">🗺️</span>
+                    <span class="label">Mapa<br>PA</span>
+                </div>
                 <div class="action-btn" onclick="showScreen('guest-access')">
                     <span class="icon">🏠</span>
                     <span class="label">Acceso<br>Visitantes</span>
@@ -757,6 +761,14 @@
                     <span class="icon">🍕</span>
                     <span class="label">Ordenar<br>Comida</span>
                 </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 24px;">Explorar el Mapa</div>
+            <div class="card" onclick="openMap()">
+                <span class="card-icon">🗺️</span>
+                <div class="card-title">Mapa Interactivo de Puerto Aventuras</div>
+                <div class="card-subtitle">Encuentra negocios, servicios y navega con instrucciones</div>
+                <span class="card-action">Abrir Mapa →</span>
             </div>
 
             <div class="section-title">Tus Reservas</div>
@@ -1158,9 +1170,9 @@
                 <span class="icon">🎉</span>
                 <span class="label">Ofertas</span>
             </div>
-            <div class="nav-item" onclick="showScreen('marketplace')">
-                <span class="icon">🍕</span>
-                <span class="label">Comida</span>
+            <div class="nav-item" onclick="openMap()">
+                <span class="icon">🗺️</span>
+                <span class="label">Mapa</span>
             </div>
             <div class="nav-item" onclick="showScreen('security')">
                 <span class="icon">🔒</span>
@@ -1227,6 +1239,7 @@
                 'yacht-rentals': 1,
                 'promotions': 2,
                 'marketplace': 3,
+                'map': 4,
                 'security': 4,
                 'guest-access': 0,
                 'golf': 0,
@@ -1258,6 +1271,11 @@
             } else {
                 greetingEl.textContent = '¡Buenas noches, María!';
             }
+        }
+
+        function openMap() {
+            // Open map in same window
+            window.location.href = 'mapa-waze.html';
         }
 
         // Initialize
